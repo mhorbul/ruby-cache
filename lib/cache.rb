@@ -131,8 +131,6 @@ class Cache
       self.invalidate(key)
     end
 
-    obj.freeze
-    
     size = obj.to_s.size
     if @max_obj_size and @max_obj_size < size
       if $DEBUG
