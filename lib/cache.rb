@@ -15,7 +15,7 @@ class Cache
   end
   
   def initialize(max_obj_size = nil, max_size = nil, max_num = nil,
-		 expiration = nil, hook = nil)
+		 expiration = nil, hook = nil, &proc)
     if max_obj_size and max_size and max_obj_size > max_size
       raise ArgumentError, "max_obj_size exceeds max_size (#{max_obj_size} > #{max_size})"
     end
@@ -36,7 +36,7 @@ class Cache
     @max_size = max_size
     @max_num = max_num
     @expiration = expiration
-    @hook = hook
+    @hook = hook || proc
     
     @objs = {}
     @size = 0
