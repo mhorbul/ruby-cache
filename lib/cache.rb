@@ -58,7 +58,7 @@ class Cache
     obj = @objs[key]
     
     if @hook
-      @hook.yield(key, obj)
+      @hook.call(key, obj)
     end
     
     @size -= obj.size
@@ -75,7 +75,7 @@ class Cache
   def invalidate_all()
     if @hook
       @objs.each do |key, obj|
-	@hook.yield(key, obj)
+	@hook.call(key, obj)
       end
     end
 
@@ -83,7 +83,7 @@ class Cache
     @list.clear
     @size = 0
   end
-  alias :clear, :invalidate_all
+  alias :clear :invalidate_all
   
   def expire()
     if @expiration
