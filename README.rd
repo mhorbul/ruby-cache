@@ -1,5 +1,5 @@
 =begin
-= Ruby/Cache 0.2
+= Ruby/Cache 0.3
 == What is Ruby/Cache
 
 Ruby/Cache is a library for caching objects based on the LRU algorithm

@@ -3,7 +3,7 @@
 = Ruby/Cache Reference Manual
 
 This is the reference manual for
-((<"Ruby/Cache"|URL:http://www.nongnu.org/pupa/ruby-cache.html>)) version 0.2.
+((<"Ruby/Cache"|URL:http://www.nongnu.org/pupa/ruby-cache.html>)) version 0.3.
 
 Ruby/Cache provides a class for caching arbitrary objects based on LRU
 algorithm. The class (({Cache})) looks like a variant of (({Hash})), and,
@@ -31,6 +31,7 @@ Enumerable
     Return the version number.
 
 --- Cache.new([max_obj_size, max_size, max_num, expiration, &hook])
+--- Cache.new(hash, &hook)
     Create a new Cache object.
     
     ((|max_obj_size|)) is the maximum size per object allowed to be cached.
@@ -46,6 +47,11 @@ Enumerable
     
     ((|hook|)) is called whenever an object is invalidated, in the form
     (({hook(key, value)})). So you can use ((|hook|)) for cleanups.
+    
+    If the latter form is used, ((|hash|)) must be a Hash object, and it
+    represents keyword arguments. ((|hash|)) can have any combination of
+    these keys: (({:max_obj_size})), (({:max_size})), (({:max_num})) and
+    (({:expiration})). The meanings are the same as above.
 
 == Methods:
 

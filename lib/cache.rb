@@ -8,36 +8,54 @@
 class Cache
 
   CACHE_OBJECT = Struct.new('CacheObject', :content, :size, :atime)
-  CACHE_VERSION = '0.2'
+  CACHE_VERSION = '0.3'
 
   include Enumerable
   
   def self.version
     CACHE_VERSION
   end
-  
-  def initialize(max_obj_size = nil, max_size = nil, max_num = nil,
-		 expiration = nil, &hook)
-    if max_obj_size and max_size and max_obj_size > max_size
-      raise ArgumentError, "max_obj_size exceeds max_size (#{max_obj_size} > #{max_size})"
+
+  # initialize(max_obj_size = nil, max_size = nil, max_num = nil,
+  #            expiration = nil, &hook)
+  # initialize(hash, &hook)
+  def initialize(*args, &hook)
+    if args.size == 1 and args[0].kind_of?(Hash)
+      @max_obj_size = @max_size = @max_num = @expiration = nil
+      args[0].each do |k, v|
+	k = k.intern if k.respond_to?(:intern)
+	case k
+	when :max_obj_size
+	  @max_obj_size = v
+	when :max_size
+	  @max_size = v
+	when :max_num
+	  @max_num = v
+	when :expiration
+	  @expiration = v
+	end
+      end
+    else
+      @max_obj_size, @max_size, @max_num, @expiration = args
     end
-    if max_obj_size and max_obj_size <= 0
-      raise ArgumentError, "invalid max_obj_size `#{max_obj_size}'"
+
+    # Sanity checks.
+    if @max_obj_size and @max_size and @max_obj_size > @max_size
+      raise ArgumentError, "max_obj_size exceeds max_size (#{@max_obj_size} > #{@max_size})"
     end
-    if max_size and max_size <= 0
-      raise ArgumentError, "invalid max_size `#{max_size}'"
+    if @max_obj_size and @max_obj_size <= 0
+      raise ArgumentError, "invalid max_obj_size `#{@max_obj_size}'"
     end
-    if max_num and max_num <= 0
-      raise ArgumentError, "invalid max_num `#{max_num}'"
+    if @max_size and @max_size <= 0
+      raise ArgumentError, "invalid max_size `#{@max_size}'"
     end
-    if expiration and expiration <= 0
-      raise ArgumentError, "invalid expiration `#{expiration}'"
+    if @max_num and @max_num <= 0
+      raise ArgumentError, "invalid max_num `#{@max_num}'"
+    end
+    if @expiration and @expiration <= 0
+      raise ArgumentError, "invalid expiration `#{@expiration}'"
     end
     
-    @max_obj_size = max_obj_size
-    @max_size = max_size
-    @max_num = max_num
-    @expiration = expiration
     @hook = hook
     
     @objs = {}

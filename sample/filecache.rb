@@ -7,7 +7,7 @@ require 'cache'
 
 class FileCache
   def initialize(maxopen = 10)
-    @cache = Cache.new(nil, nil, maxopen) {|key, obj| obj.close}
+    @cache = Cache.new(:max_num => maxopen) {|key, obj| obj.close}
     @saw = {}
   end
   
