@@ -1,10 +1,10 @@
 =begin
-= Ruby/Cache 0.1
+= Ruby/Cache 0.2
 == What is Ruby/Cache
 
 Ruby/Cache is a library for caching objects based on the LRU algorithm
 for Ruby. The official page is
-((<URL:http://www.freesoftware.fsf.org/pupa/ruby-cache.html>)).
+((<URL:http://www.nongnu.org/pupa/ruby-cache.html>)).
 
 == How to install
 
@@ -15,6 +15,8 @@ for Ruby. The official page is
 == How to use
 
 Here is a simple usage:
+
+ require 'cache'
 
  cache = Cache.new
  cache['foo'] = 'bar'
@@ -36,15 +38,8 @@ This is a more complicated example:
  while true
    puts 'Input an integer: '
    i = gets.to_i
-   unless cache.cached?(i)
-     cache[i] = generate_prime_greater_than(i)
-   end
-   puts cache[i]
+   puts cache.fetch(i) { generate_prime_greater_than(i) }
  end
-
-== Reference
-
-Not written yet.
 
 == License
 

@@ -8,14 +8,16 @@
 class Cache
 
   CACHE_OBJECT = Struct.new('CacheObject', :content, :size, :atime)
-  CACHE_VERSION = '0.1'
+  CACHE_VERSION = '0.2'
+
+  include Enumerable
   
   def self.version
     CACHE_VERSION
   end
   
   def initialize(max_obj_size = nil, max_size = nil, max_num = nil,
-		 expiration = nil, hook = nil, &proc)
+		 expiration = nil, &hook)
     if max_obj_size and max_size and max_obj_size > max_size
       raise ArgumentError, "max_obj_size exceeds max_size (#{max_obj_size} > #{max_size})"
     end
@@ -36,7 +38,7 @@ class Cache
     @max_size = max_size
     @max_num = max_num
     @expiration = expiration
-    @hook = hook || proc
+    @hook = hook
     
     @objs = {}
     @size = 0
@@ -52,23 +54,61 @@ class Cache
     @objs.include?(key)
   end
   alias :include? :cached?
+  alias :member? :cached?
   alias :key? :cached?
+  alias :has_key? :cached?
 
+  def cached_value?(val)
+    self.each_value do |v|
+      return true if v == val
+    end
+    false
+  end
+  alias :has_value? :cached_value?
+  alias :value? :cached_value?
+
+  def index(val)
+    self.each_pair do |k,v|
+      return k if v == val
+    end
+    nil
+  end
+
+  def keys
+    @objs.keys
+  end
+
+  def length
+    @objs.length
+  end
+  alias :size :length
+
+  def to_hash
+    @objs.dup
+  end
+
+  def values
+    @objs.collect {|key, obj| obj.content}
+  end
+  
   def invalidate(key)
     obj = @objs[key]
-    
-    if @hook
-      @hook.call(key, obj)
-    end
-    
-    @size -= obj.size
-    @objs.delete(key)
-    @list.each_index do |i|
-      if @list[i] == key
-	@list.delete_at(i)
-	break
+    if obj
+      if @hook
+	@hook.call(key, obj.content)
       end
+      @size -= obj.size
+      @objs.delete(key)
+      @list.each_index do |i|
+	if @list[i] == key
+	  @list.delete_at(i)
+	  break
+	end
+      end
+    elsif block_given?
+      return yield(key)
     end
+    obj.content
   end
   alias :delete :invalidate
 
@@ -95,25 +135,20 @@ class Cache
 	self.invalidate(key)
       end
     end
-    
-    GC.start
+#    GC.start
   end
 	
   def [](key)
+    self.expire()
+    
     unless @objs.include?(key)
       @misses += 1
       return nil
     end
     
     obj = @objs[key]
-    now = Time.now.to_i
-    if @expiration and obj.atime + @expiration <= now
-      self.expire()
-      @misses += 1
-      return nil
-    end
+    obj.atime = Time.now.to_i
 
-    obj.atime = now
     @list.each_index do |i|
       if @list[i] == key
 	@list.delete_at(i)
@@ -127,6 +162,8 @@ class Cache
   end
   
   def []=(key, obj)
+    self.expire()
+    
     if self.cached?(key)
       self.invalidate(key)
     end
@@ -162,6 +199,50 @@ class Cache
     obj
   end
 
+  def store(key, value)
+    self[key] = value
+  end
+
+  def each_pair
+    @objs.each do |key, obj|
+      yield key, obj.content
+    end
+    self
+  end
+  alias :each :each_pair
+
+  def each_key
+    @objs.each_key do |key|
+      yield key
+    end
+    self
+  end
+
+  def each_value
+    @objs.each_value do |obj|
+      yield obj.content
+    end
+    self
+  end
+
+  def empty?
+    @objs.empty?
+  end
+
+  def fetch(key, default = nil)
+    val = self[key]
+    if val.nil?
+      if default
+	val = self[key] = default
+      elsif block_given?
+	val = self[key] = yield(key)
+      else
+	raise IndexError, "invalid key `#{key}'"
+      end
+    end
+    val
+  end
+  
   # The total size of cached objects, the number of cached objects,
   # the number of cache hits, and the number of cache misses.
   def statistics()
